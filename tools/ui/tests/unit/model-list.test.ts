@@ -34,7 +34,8 @@ function groups(): GroupedModelOptions {
 			{ items: [row('org/a', 0), row('org/b', 1), row('org/c', 2)], orgName: 'org' },
 			{ items: [row('other/d', 3)], orgName: 'other' }
 		],
-		loaded: [row('org/loaded', 4)]
+		loaded: [row('org/loaded', 4)],
+		providers: []
 	};
 }
 

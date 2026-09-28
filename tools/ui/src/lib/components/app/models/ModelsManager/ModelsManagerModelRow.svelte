@@ -5,8 +5,14 @@
 	import ModelDownloadProgressBar from '../ModelDownloadProgressBar.svelte';
 	import ModelId from '../ModelId.svelte';
 	import ModelsManagerStatusCell from './ModelsManagerStatusCell.svelte';
-	import { modelRowActions } from './row-actions';
-	import { configuredContext, downloadProgressFor } from './utils';
+	import { modelRowActions, type ModelRowDraftTarget } from './row-actions';
+	import {
+		canLoadOption,
+		configuredContext,
+		downloadProgressFor,
+		modelDraftBadges,
+		type ModelOverride
+	} from './utils';
 	import { MoreHorizontal } from '@lucide/svelte';
 	import { DropdownMenuActions } from '$lib/components/app';
 	import { MODEL_ROW_GRID_CLASS } from '$lib/constants';
@@ -16,16 +22,31 @@
 	import { repoOf } from '$lib/utils';
 
 	interface Props {
+		/** Model the pane has open, when this row can be set as its draft. */
+		draftTarget?: ModelRowDraftTarget | null;
 		isFavorite: (option: ModelOption) => boolean;
+		/** Stored per-model overrides, for the drafts and context the row reports. */
+		overrides?: Record<string, ModelOverride>;
 		option: ModelOption;
 		onDelete: (option: ModelOption) => void;
 		onSelect: (option: ModelOption) => void;
+		onUseAsDraft?: (draft: ModelOption, targetId: string) => void;
 		selected: boolean;
 		/** Left padding in px, from the nesting depth. */
 		indent?: number;
 	}
 
-	let { indent = 0, isFavorite, onDelete, onSelect, option, selected }: Props = $props();
+	let {
+		draftTarget = null,
+		indent = 0,
+		isFavorite,
+		onDelete,
+		onSelect,
+		onUseAsDraft,
+		option,
+		overrides,
+		selected
+	}: Props = $props();
 
 	let favorite = $derived(isFavorite(option));
 	let isHidden = $derived(modelsStore.isHidden(option.id));
@@ -38,6 +59,9 @@
 			: modelsStore.status.isDownloadInProgress(option.model)
 				? ModelRowDownloadState.DOWNLOADING
 				: null
+	);
+	let draftBadges = $derived(
+		modelDraftBadges(option, overrides?.[option.id]?.load?.speculativeDecoding)
 	);
 
 	/** Repo of the row's model, which is what the Discover details are keyed by. */
@@ -78,7 +102,7 @@
 			<ModelId
 				aliases={option.aliases}
 				class="min-w-0 flex-1"
-				draftSidecars={option.draftSidecars}
+				draftSidecars={draftBadges}
 				hideCapabilities
 				hideModalities
 				modalities={option.modalities}
@@ -91,7 +115,11 @@
 		</span>
 	</span>
 
-	<ModelContext class="justify-self-end" configured={configuredContext(option)} {option} />
+	<ModelContext
+		class="justify-self-end"
+		configured={configuredContext(option, overrides)}
+		{option}
+	/>
 
 	<ModelsManagerStatusCell {download} {option} />
 
@@ -105,7 +133,11 @@
 
 	<div class="flex items-center justify-center justify-self-center">
 		<DropdownMenuActions
-			actions={modelRowActions(option, favorite, isHidden, onDelete, download)}
+			actions={modelRowActions(
+				option,
+				{ canLoad: canLoadOption(option), download, draftTarget, favorite, isHidden },
+				{ onDelete, onUseAsDraft }
+			)}
 			align="end"
 			triggerIcon={MoreHorizontal}
 			triggerTooltip="Model actions"

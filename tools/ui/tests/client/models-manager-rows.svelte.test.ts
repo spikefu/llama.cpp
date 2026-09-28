@@ -4,13 +4,16 @@
 import ModelsManagerRowWrapper from './components/ModelsManagerRowWrapper.svelte';
 import ModelsManagerRepoRow from '$lib/components/app/models/ModelsManager/ModelsManagerRepoRow.svelte';
 import type { ModelQuantGroup } from '$lib/components/app/models/ModelsManager/utils';
+import { LOCAL_BACKEND_ID } from '$lib/constants';
 import { ModelGroupKind } from '$lib/enums';
+import { backendsStore } from '$lib/stores/backends.svelte';
 import type { ModelOption } from '$lib/types/models';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 
 const option: ModelOption = {
+	backendId: LOCAL_BACKEND_ID,
 	capabilities: [],
 	id: 'org/Qwen3-8B:Q4_K_M',
 	model: 'org/Qwen3-8B:Q4_K_M',
@@ -33,6 +36,8 @@ describe('manager model row', () => {
 
 	beforeEach(() => {
 		selected = [];
+		// the row resolves the backend that serves it for its load control
+		backendsStore.initialize();
 	});
 
 	function row() {
