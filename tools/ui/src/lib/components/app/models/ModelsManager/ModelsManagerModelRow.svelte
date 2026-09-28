@@ -11,8 +11,9 @@
 	import { DropdownMenuActions } from '$lib/components/app';
 	import { MODEL_ROW_GRID_CLASS } from '$lib/constants';
 	import { KeyboardKey, ModelRowDownloadState } from '$lib/enums';
-	import { modelsStore } from '$lib/stores';
+	import { modelsStore, uiStore } from '$lib/stores';
 	import type { ModelOption } from '$lib/types/models';
+	import { repoOf } from '$lib/utils';
 
 	interface Props {
 		isFavorite: (option: ModelOption) => boolean;
@@ -39,10 +40,22 @@
 				: null
 	);
 
+	/** Repo of the row's model, which is what the Discover details are keyed by. */
+	function openInDiscover(): void {
+		uiStore.openModelsDiscover(repoOf(option.model));
+	}
+
+	// a tracked download has nothing to configure yet, so its row opens the Discover
+	// details, where the sizes, variants and download options live
+	function activate(): void {
+		if (download) openInDiscover();
+		else onSelect(option);
+	}
+
 	function handleKeydown(event: KeyboardEvent): void {
 		if (event.key === KeyboardKey.SPACE) event.preventDefault();
 
-		if (event.key === KeyboardKey.ENTER || event.key === KeyboardKey.SPACE) onSelect(option);
+		if (event.key === KeyboardKey.ENTER || event.key === KeyboardKey.SPACE) activate();
 	}
 </script>
 
@@ -53,7 +66,7 @@
 		isHidden && 'opacity-60',
 		selected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/40'
 	]}
-	onclick={() => onSelect(option)}
+	onclick={activate}
 	onkeydown={handleKeydown}
 	role="button"
 	tabindex="0"
